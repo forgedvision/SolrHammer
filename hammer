@@ -1,0 +1,52 @@
+#!/home/nsharunenko/.rvm/rubies/ruby-1.9.3-p286/bin/ruby
+
+require 'thor'
+
+class SolrHammer < Thor
+  desc "execute","run requests against the solr server"
+  method_option :dictionary, :aliases => "-d", :default => "words.dict", :desc => "File containing list of words to use for solr searches"
+  method_option :core, :aliases => "-c", :default => "test", :desc => "Specify Solr core to run the test against"
+
+  def execute
+
+    @dictionary_file = options[:dictionary]
+
+    # Removing the dictionary file if it is empty
+    if File.zero?(@dictionary_file)
+      say "removed", :red
+      File.delete(@dictionary_file)
+    end
+
+    # Process the dictionary option
+    case options[:dictionary]
+    when "words.dict"
+      if File.exists?(@dictionary_file)
+        say "File #{@dictionary_file} already exists, processing it", :green
+        # EXECUTE
+      end
+    else
+        say "You gave me non-default file to process: #{@dictionary_file}", :green
+        # EXECUTE
+    end
+    
+    # Process the core option, ensure only allowed ones are accepted
+    case options[:core]
+    when "test" || "dev" || "staging" || "pharos"
+      say "Setting your core to #{@core}"
+      @core = options[:core]
+    else
+      say "Unknown core specified, running your test on the 'test' core instead", :yellow
+      @core = "test"
+    end
+  end
+
+
+  desc "dictionary", "populate your dictionary file with terms to search for on the solr server"
+  method_option :number, :aliases => "-n", :desc => "supplies the number of terms to add to the dictionary"
+
+  def dictionary
+  end
+
+end
+
+SolrHammer.start
