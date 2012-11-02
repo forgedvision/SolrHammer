@@ -23,6 +23,9 @@ class SolrHammer < Thor
       if File.exists?(@dictionary_file)
         say "File #{@dictionary_file} already exists, processing it", :green
         # EXECUTE
+      else
+        say "Default 'words.dict' file is not found", :yellow
+        invoke :dictionary
       end
     else
         say "You gave me non-default file to process: #{@dictionary_file}", :green
@@ -31,20 +34,19 @@ class SolrHammer < Thor
     
     # Process the core option, ensure only allowed ones are accepted
     case options[:core]
-    when "test" || "dev" || "staging" || "pharos"
-      say "Setting your core to #{@core}"
+    when "test", "dev", "staging", "pharos"
       @core = options[:core]
     else
-      say "Unknown core specified, running your test on the 'test' core instead", :yellow
       @core = "test"
     end
   end
 
 
   desc "dictionary", "populate your dictionary file with terms to search for on the solr server"
-  method_option :number, :aliases => "-n", :desc => "supplies the number of terms to add to the dictionary"
+  method_option :number, :aliases => "-n", :default => "10", :desc => "supplies the number of terms to add to the dictionary"
 
   def dictionary
+    say "Populating your dictionary file with #{options[:number]} of terms", :green
   end
 
 end
