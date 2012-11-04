@@ -1,35 +1,34 @@
-#!/home/nsharunenko/.rvm/rubies/ruby-1.9.3-p286/bin/ruby
+#! /home/nazar/.rvm/rubies/ruby-1.9.3-p286/bin/ruby
 
 require 'thor'
+require 'open-uri'
 
 class SolrHammer < Thor
-  desc "execute","run requests against the solr server"
+  desc "solr URL:PORT","run requests against the solr server"
   method_option :dictionary, :aliases => "-d", :default => "words.dict", :desc => "File containing list of words to use for solr searches"
   method_option :core, :aliases => "-c", :default => "test", :desc => "Specify Solr core to run the test against"
 
-  def execute
+  def solr(url_port)
 
     @dictionary_file = options[:dictionary]
 
     # Removing the dictionary file if it is empty
     if File.zero?(@dictionary_file)
-      say "removed", :red
+      say "blank #{@dictionary_file} removed", :red
       File.delete(@dictionary_file)
     end
 
     # Process the dictionary option
-    case options[:dictionary]
+    case @dictionary_file
     when "words.dict"
       if File.exists?(@dictionary_file)
         say "File #{@dictionary_file} already exists, processing it", :green
-        # EXECUTE
       else
         say "Default 'words.dict' file is not found", :yellow
         invoke :dictionary
       end
     else
         say "You gave me non-default file to process: #{@dictionary_file}", :green
-        # EXECUTE
     end
     
     # Process the core option, ensure only allowed ones are accepted
@@ -39,16 +38,21 @@ class SolrHammer < Thor
     else
       @core = "test"
     end
+
+    # The actual script that executes the searches
+    open(url_port) do |request|
+      puts request.status
+    end
   end
 
-
-  desc "dictionary", "populate your dictionary file with terms to search for on the solr server"
-  method_option :number, :aliases => "-n", :default => "10", :desc => "supplies the number of terms to add to the dictionary"
+  desc "dictionary", "populate your dictionary file with terms to search for on the solr server (default: 100)"
+  method_option :number, :aliases => "-n", :default => "100", :desc => "Supply the number of words to copy into your dictionary file"
 
   def dictionary
-    say "Populating your dictionary file with #{options[:number]} of terms", :green
+    say "Populating your dictionary file with #{options[:number]} terms", :green
+    @system_dictionary = "cat /usr/share/dict/words | head -#{options[:number]} > words.dict"
+    system @system_dictionary 
   end
-
 end
 
 SolrHammer.start
