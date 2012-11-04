@@ -1,6 +1,7 @@
 #! /home/nazar/.rvm/rubies/ruby-1.9.3-p286/bin/ruby
 
 require 'thor'
+require 'json'
 require 'open-uri'
 
 class SolrHammer < Thor
