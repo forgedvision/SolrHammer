@@ -1,4 +1,4 @@
-#! /home/nazar/.rvm/rubies/ruby-1.9.3-p286/bin/ruby
+#!/home/nsharunenko/.rvm/rubies/ruby-1.9.3-p286/bin/ruby
 
 require 'thor'
 require 'json'
@@ -26,7 +26,7 @@ class SolrHammer < Thor
         say "File #{@dictionary_file} already exists, processing it", :green
       else
         say "Default 'words.dict' file is not found", :yellow
-        invoke :dictionary
+        invoke :dictionary, []
       end
     else
         say "You gave me non-default file to process: #{@dictionary_file}", :green
@@ -41,9 +41,19 @@ class SolrHammer < Thor
     end
 
     # The actual script that executes the searches
-    open(url_port) do |request|
-      puts request.status
+    say "Sending requests to your Solr server. This might take some time.", :green
+    File.open(@dictionary_file, "r").each do |word|
+      word = word.strip
+      url = "http://#{url_port}/solr/#{@core}/select?q=#{word.strip}&wt=json"
+        open(url) do |request|
+          json = JSON.parse(request.read)
+
+          open('response.log', 'a+'){ |f|
+            f.puts "#{word} => #{json["response"]["numFound"]}" +  " | HTTP: #{request.status}" +  " | Solr responseHeader: #{json["responseHeader"]["status"]}"
+          }
+      end
     end
+    say "Processing complete. Please review your 'response.log' file.", :green
   end
 
   desc "dictionary", "populate your dictionary file with terms to search for on the solr server (default: 100)"
@@ -51,8 +61,13 @@ class SolrHammer < Thor
 
   def dictionary
     say "Populating your dictionary file with #{options[:number]} terms", :green
-    @system_dictionary = "cat /usr/share/dict/words | head -#{options[:number]} > words.dict"
+    @system_dictionary = "cat words | head -#{options[:number]} > words.dict"
+    # unzip provided words.zip
+    system 'unzip -qq words.zip'
+    # execute the words.dict file population
     system @system_dictionary 
+    # cleanup by removing the extracted words file
+    system 'rm words'
   end
 end
 
